@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "DXWindow.h"
-// #include "Win32App.h"
 #include "Application.h"
 
 #include <iostream>
@@ -13,8 +12,8 @@ int CALLBACK wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR lpCmdL
 
     auto app = Application::GetInstance();
 
-    // auto model = make_shared<Model>(L"bun_zipper.ply", ModelType::PLY);
-    auto model = make_shared<Model>(L"african_head.obj", ModelType::OBJ);
+    auto model = make_shared<Model>(L"bun_zipper.ply", ModelType::PLY, true);
+    // auto model = make_shared<Model>(L"african_head.obj", ModelType::OBJ);
     app->SetModel(model);
 
     auto window = make_shared<DXWindow>(L"Learn DX12");

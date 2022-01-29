@@ -7,11 +7,14 @@ std::wstring Model::GetModelFullPath(std::wstring model_name)
     return std::wstring(model_path) + model_name;
 }
 
-Model::Model(std::wstring model_name, ModelType type) noexcept
+Model::Model(std::wstring model_name, ModelType type, bool reconstruct) noexcept
 {
     auto loader = ModelLoader::CreateModelLoader(type);
     loader->LoadFromFile(Model::GetModelFullPath(model_name));
-    loader->Reconstruct();
+    if (reconstruct)
+    {
+        loader->Reconstruct();
+    }
     
     auto positions = loader->GetPositions();
     m_vertices = std::vector<Vertex>(positions.size());

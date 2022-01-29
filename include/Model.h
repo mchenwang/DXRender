@@ -26,7 +26,7 @@ private:
 public:
     static std::wstring GetModelFullPath(std::wstring model_name);
 
-    Model(std::wstring model_name, ModelType modelType) noexcept;
+    Model(std::wstring model_name, ModelType modelType, bool reconstruct = false) noexcept;
     ~Model() = default;
 
     std::vector<Vertex> GetVertices() const;
