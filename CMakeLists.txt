@@ -14,6 +14,7 @@ set(SOURCES
     src/DescriptorHeap.cpp
     src/Application.cpp
     src/Model.cpp
+    src/Camera.cpp
     include/common/ModelLoader.cpp
     src/main.cpp
 )

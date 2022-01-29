@@ -6,36 +6,31 @@
 #include "CommandQueue.h"
 #include "DescriptorHeap.h"
 #include "Model.h"
+#include "Camera.h"
 
 using namespace DirectX;
 
-
-// struct Vertex
-// {
-//     XMFLOAT3 position;
-//     XMFLOAT4 color;
-// };
-
 class DXWindow
 {
-    const wchar_t* m_Name;
-    std::wstring m_AssetsPath;
+    const wchar_t* m_name;
+    std::wstring m_assetsPath;
 
     std::shared_ptr<Model> m_model;
+    std::shared_ptr<Camera> m_camera;
 
     // Use WARP adapter
-    bool m_UseWarp = false;
+    bool m_useWarp = false;
 
-    uint32_t m_Width;
-    uint32_t m_Height;
+    uint32_t m_width;
+    uint32_t m_height;
 
     // Set to true once the DX12 objects have been initialized.
-    bool m_IsInitialized = false;
+    bool m_isInitialized = false;
 
     // Window handle.
     HWND m_hWnd = nullptr;
     // Window rectangle (used to toggle fullscreen state).
-    RECT m_WindowRect;
+    RECT m_windowRect;
 
     // DirectX 12 Objects
     ComPtr<ID3D12Device2> m_device;
@@ -55,18 +50,18 @@ class DXWindow
     // Depth buffer.
     ComPtr<ID3D12Resource> m_DepthBuffer;
 
-    CD3DX12_VIEWPORT m_Viewport;
-    CD3DX12_RECT m_ScissorRect;
+    CD3DX12_VIEWPORT m_viewport;
+    CD3DX12_RECT m_scissorRect;
 
     // By default, use windowed mode.
     // Can be toggled with the Alt+Enter or F11
-    bool m_Fullscreen = false;
+    bool m_fullscreen = false;
 
-    float m_FoV;
+    // float m_FoV;
 
-    DirectX::XMMATRIX m_ModelMatrix;
-    DirectX::XMMATRIX m_ViewMatrix;
-    DirectX::XMMATRIX m_ProjectionMatrix;
+    DirectX::XMMATRIX m_ModelMatrix; // TODO
+    // DirectX::XMMATRIX m_ViewMatrix;
+    // DirectX::XMMATRIX m_ProjectionMatrix;
 
     std::wstring GetAssetFullPath(LPCWSTR assetName);
 
@@ -78,6 +73,8 @@ class DXWindow
         size_t numElements, size_t elementSize, const void* bufferData,
         D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE);
     void LoadAssets();
+
+    void UpdateWindowRect(uint32_t width, uint32_t height);
 public:
     DXWindow(const wchar_t* name, uint32_t w = 1280, uint32_t h = 720) noexcept;
     ~DXWindow() = default;

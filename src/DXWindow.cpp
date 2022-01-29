@@ -6,14 +6,14 @@
 #include "Application.h"
 
 DXWindow::DXWindow(const wchar_t* name, uint32_t w, uint32_t h) noexcept
-    : m_Name(name)
-    , m_Width(w)
-    , m_Height(h)
-    , m_Viewport(0.0f, 0.0f, static_cast<float>(w), static_cast<float>(h))
-    , m_ScissorRect(0, 0, static_cast<LONG>(w), static_cast<LONG>(h))
-    , m_FoV(45.)
+    : m_name(name)
+    , m_width(w)
+    , m_height(h)
+    , m_viewport(0.0f, 0.0f, static_cast<float>(w), static_cast<float>(h))
+    , m_scissorRect(0, 0, static_cast<LONG>(w), static_cast<LONG>(h))
 {
-    m_AssetsPath = shader_path;
+    m_assetsPath = shader_path;
+    m_camera = std::make_shared<Camera>(static_cast<float>(w), static_cast<float>(h));
 }
 
 void DXWindow::ParseCommandLineArguments()
@@ -25,15 +25,15 @@ void DXWindow::ParseCommandLineArguments()
     {
         if (::wcscmp(argv[i], L"-w") == 0 || ::wcscmp(argv[i], L"--width") == 0)
         {
-            m_Width = ::wcstol(argv[++i], nullptr, 10);
+            m_width = ::wcstol(argv[++i], nullptr, 10);
         }
         if (::wcscmp(argv[i], L"-h") == 0 || ::wcscmp(argv[i], L"--height") == 0)
         {
-            m_Height = ::wcstol(argv[++i], nullptr, 10);
+            m_height = ::wcstol(argv[++i], nullptr, 10);
         }
         if (::wcscmp(argv[i], L"-warp") == 0 || ::wcscmp(argv[i], L"--warp") == 0)
         {
-            m_UseWarp = true;
+            m_useWarp = true;
         }
     }
  
@@ -43,14 +43,14 @@ void DXWindow::ParseCommandLineArguments()
 
 std::wstring DXWindow::GetAssetFullPath(LPCWSTR assetName)
 {
-    return m_AssetsPath + assetName;
+    return m_assetsPath + assetName;
 }
 
 void DXWindow::LoadPipeline()
 {
     m_device = Application::GetInstance()->GetDevice();
     m_commandQueue = std::make_shared<CommandQueue>(m_device, D3D12_COMMAND_LIST_TYPE_DIRECT);
-    m_swapChain = std::make_shared<SwapChain>(m_device, m_Width, m_Height, m_hWnd, m_commandQueue);
+    m_swapChain = std::make_shared<SwapChain>(m_device, m_width, m_height, m_hWnd, m_commandQueue);
     m_RTVHeap = std::make_shared<RTVDescriptorHeap>(m_device, SwapChain::NUM_OF_FRAMES);
     m_DSVHeap = std::make_shared<DSVDescriptorHeap>(m_device, 1);
     
@@ -248,7 +248,7 @@ void DXWindow::LoadAssets()
 
     m_commandQueue->ExecuteCommandList(commandList);
 
-    ResizeDepthBuffer(m_Width, m_Height);
+    ResizeDepthBuffer(m_width, m_height);
 }
 
 void DXWindow::Init(HWND hWnd)
@@ -256,12 +256,12 @@ void DXWindow::Init(HWND hWnd)
     m_hWnd = hWnd;
     
     // Initialize the global window rect variable.
-    ::GetWindowRect(m_hWnd, &m_WindowRect);
+    ::GetWindowRect(m_hWnd, &m_windowRect);
 
     LoadPipeline();
     LoadAssets();
     
-    m_IsInitialized = true;
+    m_isInitialized = true;
 }
 
 void DXWindow::Destroy()
@@ -287,19 +287,19 @@ HWND DXWindow::GetHandler() const
 }
 uint32_t DXWindow::GetWidth() const
 {
-    return m_Width;
+    return m_width;
 }
 uint32_t DXWindow::GetHeight() const
 {
-    return m_Height;
+    return m_height;
 }
 const wchar_t* DXWindow::GetName() const
 {
-    return m_Name;
+    return m_name;
 }
 bool DXWindow::IsInitialized() const
 {
-    return m_IsInitialized;
+    return m_isInitialized;
 }
 void DXWindow::SetVSync(bool VSync)
 {
@@ -311,7 +311,7 @@ bool DXWindow::IsVSync() const
 }
 bool DXWindow::IsFullscreen() const
 {
-    return m_Fullscreen;
+    return m_fullscreen;
 }
 
 void DXWindow::Update()
@@ -355,14 +355,14 @@ void DXWindow::Update()
     m_ModelMatrix = scale * rotation * translation;
 
     // Update the view matrix.
-    const XMVECTOR eyePosition = XMLoadFloat4(&g_passData.eyePos);
-    const XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);
-    const XMVECTOR upDirection = XMVectorSet(0, 1, 0, 0);
-    m_ViewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
+    // const XMVECTOR eyePosition = XMLoadFloat4(&g_passData.eyePos);
+    // const XMVECTOR focusPoint = XMVectorSet(0, 0, 0, 1);
+    // const XMVECTOR upDirection = XMVectorSet(0, 1, 0, 0);
+    // m_ViewMatrix = XMMatrixLookAtLH(eyePosition, focusPoint, upDirection);
 
     // Update the projection matrix.
-    float aspectRatio = m_Width / static_cast<float>(m_Height);
-    m_ProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(m_FoV), aspectRatio, 0.01f, 100.0f);
+    // float aspectRatio = m_width / static_cast<float>(m_height);
+    // m_ProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(m_FoV), aspectRatio, 0.01f, 100.0f);
 }
 
 void DXWindow::Render()
@@ -371,8 +371,8 @@ void DXWindow::Render()
     
     // Set necessary state.
     commandList->SetGraphicsRootSignature(m_RootSignature.Get());
-    commandList->RSSetViewports(1, &m_Viewport);
-    commandList->RSSetScissorRects(1, &m_ScissorRect);
+    commandList->RSSetViewports(1, &m_viewport);
+    commandList->RSSetScissorRects(1, &m_scissorRect);
 
     auto RTVHandle = m_RTVHeap->GetDescriptorHandle(m_swapChain->GetCurrentBackBufferIndex());
     auto DSVHandle = m_DSVHeap->GetDescriptorHandle();
@@ -387,7 +387,7 @@ void DXWindow::Render()
     // XMMATRIX mvpMatrix = XMMatrixMultiply(m_ModelMatrix, m_ViewMatrix);
     // mvpMatrix = XMMatrixMultiply(mvpMatrix, m_ProjectionMatrix); // C-style
     // DXMath中矩阵是行主序，hlsl中是列主序，在C++层面做一层转置效率更高
-    auto mvp = m_ModelMatrix * m_ViewMatrix * m_ProjectionMatrix;
+    auto mvp = m_ModelMatrix * m_camera->GetViewMatrix() * m_camera->GetProjectionMatrix();
     g_MVPCB.mvp = XMMatrixTranspose(mvp);
     // mvp.r[3] = XMVectorSet(0.f, 0.f, 0.f, 1.f);
     g_MVPCB.modelMatrixNegaTrans = XMMatrixInverse(nullptr, m_ModelMatrix);
@@ -401,17 +401,32 @@ void DXWindow::Render()
     m_swapChain->Present(commandList);
 }
 
+void DXWindow::UpdateWindowRect(uint32_t width, uint32_t height)
+{
+    m_width = std::max(1u, width);
+    m_height = std::max(1u, height);
+
+    m_swapChain->Resize(m_width, m_height, m_RTVHeap);
+    m_viewport = CD3DX12_VIEWPORT(0.f, 0.f,
+        static_cast<float>(m_width), static_cast<float>(m_height));
+    m_scissorRect = CD3DX12_RECT(0, 0, static_cast<LONG>(m_width), static_cast<LONG>(m_height));
+    m_camera->UpdateAspectRatio(static_cast<float>(m_width), static_cast<float>(m_height));
+
+}
+
 void DXWindow::SetFullscreen(bool fullscreen)
 {
-    if (m_Fullscreen != fullscreen)
+    if (m_fullscreen != fullscreen)
     {
-        m_Fullscreen = fullscreen;
+        m_fullscreen = fullscreen;
+        uint32_t width = 1;
+        uint32_t height = 1;
 
-        if (m_Fullscreen) // Switching to fullscreen.
+        if (m_fullscreen) // Switching to fullscreen.
         {
             // Store the current window dimensions so they can be restored 
             // when switching out of fullscreen state.
-            ::GetWindowRect(m_hWnd, &m_WindowRect);
+            ::GetWindowRect(m_hWnd, &m_windowRect);
             // Set the window style to a borderless window so the client area fills
             // the entire screen.
             UINT windowStyle = WS_OVERLAPPEDWINDOW & ~(WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
@@ -433,8 +448,8 @@ void DXWindow::SetFullscreen(bool fullscreen)
 
             ::ShowWindow(m_hWnd, SW_MAXIMIZE);
 
-            m_Width = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
-            m_Height = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
+            width = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left;
+            height = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top;
         }
         else
         {
@@ -442,41 +457,29 @@ void DXWindow::SetFullscreen(bool fullscreen)
             ::SetWindowLongW(m_hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
 
             ::SetWindowPos(m_hWnd, HWND_NOTOPMOST,
-                m_WindowRect.left,
-                m_WindowRect.top,
-                m_WindowRect.right - m_WindowRect.left,
-                m_WindowRect.bottom - m_WindowRect.top,
+                m_windowRect.left,
+                m_windowRect.top,
+                m_windowRect.right - m_windowRect.left,
+                m_windowRect.bottom - m_windowRect.top,
                 SWP_FRAMECHANGED | SWP_NOACTIVATE);
 
             ::ShowWindow(m_hWnd, SW_NORMAL);
 
-            m_Width = m_WindowRect.right - m_WindowRect.left;
-            m_Height = m_WindowRect.bottom - m_WindowRect.top;
+            width = m_windowRect.right - m_windowRect.left;
+            height = m_windowRect.bottom - m_windowRect.top;
         }
         
-        m_swapChain->Resize(m_Width, m_Height, m_RTVHeap);
-        m_Viewport = CD3DX12_VIEWPORT(0.f, 0.f,
-            static_cast<float>(m_Width), static_cast<float>(m_Height));
-        m_ScissorRect = CD3DX12_RECT(0, 0, static_cast<LONG>(m_Width), static_cast<LONG>(m_Height));
-        
-        ResizeDepthBuffer(m_Width, m_Height);
+        UpdateWindowRect(width, height);
+        ResizeDepthBuffer(m_width, m_height);
     }
 }
 
 void DXWindow::Resize(uint32_t width, uint32_t height)
 {
-    if (m_Width != width || m_Height != height)
+    if (m_width != width || m_height != height)
     {
-        m_swapChain->Resize(width, height, m_RTVHeap);
-        
-        m_Width = std::max(1u, width);
-        m_Height = std::max(1u, height);
-
-        m_Viewport = CD3DX12_VIEWPORT(0.f, 0.f,
-            static_cast<float>(m_Width), static_cast<float>(m_Height));
-        m_ScissorRect = CD3DX12_RECT(0, 0, static_cast<LONG>(m_Width), static_cast<LONG>(m_Height));
-
-        ResizeDepthBuffer(m_Width, m_Height);
+        UpdateWindowRect(width, height);
+        ResizeDepthBuffer(m_width, m_height);
     }
 }
 
